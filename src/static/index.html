@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishCollar | AI Threat Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #020617;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --safe: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-color) 0%, #0f172a 100%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px; /* Added padding so it doesn't touch the screen edges */
+            box-sizing: border-box;
+            overflow-y: auto; /* THE FIX: Turns vertical scrolling back on */
+        }
+
+        /* Glassmorphism Dashboard */
+        .dashboard {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 540px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+        }
+
+        h2 span { color: var(--primary); }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95em;
+            margin-top: 8px;
+            margin-bottom: 30px;
+        }
+
+        /* Input Group styling */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 20px;
+            height: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            box-sizing: border-box;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        button:active { transform: translateY(1px); }
+        
+        button:disabled { 
+            background-color: #334155; 
+            color: #94a3b8;
+            cursor: not-allowed; 
+            transform: none;
+        }
+
+        /* Spinner Animation */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results Card Animation */
+        #resultCard {
+            margin-top: 30px;
+            padding: 24px;
+            border-radius: 16px;
+            display: none;
+            text-align: left;
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .status-header svg { width: 28px; height: 28px; }
+
+        .safe { 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 1px solid rgba(16, 185, 129, 0.2); 
+            color: var(--safe); 
+        }
+        
+        .phishing { 
+            background: rgba(239, 68, 68, 0.1); 
+            border: 1px solid rgba(239, 68, 68, 0.2); 
+            color: var(--danger); 
+        }
+
+        /* SHAP Explainability UI */
+        .xai-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .xai-title {
+            color: #fca5a5;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .xai-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .xai-list li {
+            color: #e2e8f0;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .xai-list li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .xai-list li:last-child { margin-bottom: 0; }
+
+        .engine-tag {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 0.75em;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="logo-container">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <circle cx="12" cy="11" r="3"></circle>
+            </svg>
+        </div>
+        <h2>Phish<span>Collar</span></h2>
+        <p class="subtitle">AI-Powered Enterprise Threat Intelligence</p>
+        
+        <div class="input-group">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <input type="text" id="urlInput" placeholder="Enter target URL to analyze..." autocomplete="off">
+        </div>
+        
+        <button id="scanBtn" onclick="scanURL()">
+            <span class="spinner" id="btnSpinner"></span>
+            <span id="btnText">Initiate Scan</span>
+        </button>
+
+        <div id="resultCard">
+            <div class="status-header" id="statusHeader">
+                </div>
+            <div id="modelDetails"></div>
+            <div style="text-align: center;">
+                <span class="engine-tag" id="engineTag"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inline SVGs for status
+        const iconSafe = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+        const iconDanger = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+        const iconSearch = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+
+        async function scanURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            const btn = document.getElementById('scanBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const resultCard = document.getElementById('resultCard');
+            const statusHeader = document.getElementById('statusHeader');
+            const modelDetails = document.getElementById('modelDetails');
+            const engineTag = document.getElementById('engineTag');
+
+            if (!url) { 
+                document.getElementById('urlInput').focus();
+                return; 
+            }
+
+            // UI Loading State
+            btn.disabled = true;
+            btnText.innerText = "Analyzing Telemetry...";
+            btnSpinner.style.display = "block";
+            resultCard.style.display = "none";
+            modelDetails.innerHTML = "";
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url }) 
+                });
+
+                const data = await response.json();
+
+                if (data.error_message) throw new Error(data.error_message);
+
+                resultCard.style.display = "block";
+                engineTag.innerText = `Powered by ${data.model_used}`;
+
+                if (data.status === "Phishing") {
+                    resultCard.className = "phishing";
+                    statusHeader.innerHTML = `${iconDanger} Critical Threat Detected`;
+                    statusHeader.style.color = "var(--danger)";
+                    
+                    // Render the XAI Threat Indicators
+                    let indicatorHtml = `
+                        <div class="xai-box">
+                            <div class="xai-title">${iconSearch} SHAP Explainer: Threat Indicators</div>
+                            <ul class="xai-list">
+                    `;
+                    
+                    if (data.threat_indicators && data.threat_indicators.length > 0) {
+                        data.threat_indicators.forEach(indicator => {
+                            indicatorHtml += `<li>${indicator}</li>`;
+                        });
+                    } else {
+                        indicatorHtml += `<li>General structural anomalies detected by the AI ensemble.</li>`;
+                    }
+                    
+                    indicatorHtml += `</ul></div>`;
+                    modelDetails.innerHTML = indicatorHtml;
+                    
+                } else {
+                    resultCard.className = "safe";
+                    statusHeader.innerHTML = `${iconSafe} Legitimate Domain`;
+                    statusHeader.style.color = "var(--safe)";
+                    modelDetails.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9em; margin: 0;">No malicious structural signatures detected. Traffic is cleared.</p>`;
+                }
+
+            } catch (error) {
+                resultCard.style.display = "block";
+                resultCard.className = "phishing";
+                statusHeader.innerHTML = `${iconDanger} Network Error`;
+                statusHeader.style.color = "var(--danger)";
+                modelDetails.innerHTML = `<p style="color: #fca5a5; font-size: 0.9em; margin: 0;">Make sure your FastAPI Python server is running on port 8000. Details: ${error.message}</p>`;
+                engineTag.innerText = "System Offline";
+            } finally {
+                // Reset Button
+                btn.disabled = false;
+                btnText.innerText = "Initiate Scan";
+                btnSpinner.style.display = "none";
+            }
+        }
+
+        // Allow pressing "Enter" in the input field to trigger the scan
+        document.getElementById("urlInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                scanURL();
+            }
+        });
+    </script>
+</body>
+</html>

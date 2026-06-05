@@ -6,7 +6,7 @@
 ![Deployment](https://img.shields.io/badge/Deployed-Render-brightgreen.svg)
 
 ## 📌 Project Overview
-PhishGuard (formerly PhishCollar) is an end-to-end Machine Learning microservice designed to detect zero-day phishing URLs with state-of-the-art accuracy. Moving beyond traditional Jupyter Notebook data science, this project packages advanced machine learning architecture into a high-concurrency RESTful API, complete with a responsive web dashboard and automated adversarial testing.
+PhishCollar is an end-to-end Machine Learning microservice designed to detect zero-day phishing URLs with state-of-the-art accuracy. Moving beyond traditional Jupyter Notebook data science, this project packages advanced machine learning architecture into a high-concurrency RESTful API, complete with a responsive web dashboard and automated adversarial testing.
 
 The system utilizes a **Dual-Tier AI Architecture** to balance real-time processing speed with maximum security, achieving a peak accuracy of **97.49%** while effectively halving the False Negative rate of baseline literature.
 
